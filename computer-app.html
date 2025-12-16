@@ -1,0 +1,676 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IPOS Quiz Challenge</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#111a2e;
+      --soft:#172340;
+      --text:#eaf0ff;
+      --muted:#a8b3d6;
+      --good:#2ecc71;
+      --bad:#ff5c5c;
+      --accent:#5b8cff;
+      --accent2:#9b5bff;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 20% 10%, rgba(91,140,255,.25), transparent 55%),
+        radial-gradient(700px 500px at 90% 30%, rgba(155,91,255,.22), transparent 55%),
+        radial-gradient(800px 700px at 50% 90%, rgba(46,204,113,.12), transparent 60%),
+        var(--bg);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .app{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+    }
+    @media (max-width: 900px){
+      .app{grid-template-columns:1fr}
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent 38%), var(--card);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    header{
+      padding:18px 18px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+    }
+    .title{
+      display:flex; flex-direction:column; gap:6px;
+    }
+    h1{
+      margin:0;
+      font-size: clamp(20px, 2.4vw, 28px);
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size: 14px;
+      line-height:1.35;
+    }
+
+    .pillRow{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .pill{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 999px;
+      padding:10px 12px;
+      font-size:13px;
+      color:var(--muted);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text); font-weight:650}
+
+    .main{
+      padding:18px;
+    }
+
+    .progressWrap{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .bar{
+      flex:1;
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .35s ease;
+    }
+    .qCount{
+      color:var(--muted);
+      font-size: 13px;
+      min-width: 90px;
+      text-align:right;
+    }
+
+    .question{
+      font-size: 18px;
+      line-height:1.35;
+      margin:8px 0 14px;
+      font-weight:650;
+    }
+
+    .choices{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 520px){
+      .choices{grid-template-columns:1fr}
+    }
+
+    .choice{
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding:14px 14px;
+      cursor:pointer;
+      transition: transform .08s ease, border-color .2s ease, background .2s ease;
+      position:relative;
+      min-height:58px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .choice:hover{ transform: translateY(-1px); border-color: rgba(91,140,255,.45); }
+    .choice:active{ transform: translateY(0px) scale(.99); }
+    .badge{
+      width:28px; height:28px;
+      border-radius: 10px;
+      display:grid; place-items:center;
+      background: rgba(91,140,255,.18);
+      border: 1px solid rgba(91,140,255,.35);
+      color: var(--text);
+      font-size: 13px;
+      font-weight:700;
+      flex:0 0 auto;
+    }
+    .choiceText{ font-size: 15px; color: var(--text); }
+
+    .choice.correct{
+      border-color: rgba(46,204,113,.75);
+      background: rgba(46,204,113,.12);
+    }
+    .choice.wrong{
+      border-color: rgba(255,92,92,.75);
+      background: rgba(255,92,92,.10);
+    }
+    .choice.disabled{
+      cursor:not-allowed;
+      opacity:.92;
+    }
+
+    .feedback{
+      margin-top:14px;
+      padding:12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      display:none;
+    }
+    .feedback strong{ color: var(--text); }
+    .feedback.good{ border-color: rgba(46,204,113,.55); background: rgba(46,204,113,.10); }
+    .feedback.bad{ border-color: rgba(255,92,92,.55); background: rgba(255,92,92,.08); }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+      flex-wrap:wrap;
+    }
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius: 14px;
+      padding:12px 14px;
+      font-weight:700;
+      font-size: 14px;
+      transition: transform .08s ease, filter .2s ease, opacity .2s ease;
+      color: var(--text);
+    }
+    button:active{ transform: scale(.99); }
+    .btnPrimary{
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .btnGhost{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--text);
+    }
+    .btnPrimary:disabled, .btnGhost:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    /* Right panel */
+    .side{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .miniCard{
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding:14px;
+    }
+    .miniTitle{
+      font-size:14px;
+      color: var(--muted);
+      margin:0 0 8px;
+    }
+    .big{
+      font-size: 22px;
+      font-weight:800;
+      margin:0;
+    }
+    .small{
+      margin:6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height:1.4;
+    }
+
+    .topicChips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+    .chip{
+      padding:8px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Confetti */
+    .confetti{
+      position: fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      display:none;
+    }
+    .confetti span{
+      position:absolute;
+      width:10px; height:14px;
+      border-radius:3px;
+      opacity:.95;
+      transform: translateY(-10vh) rotate(0deg);
+      animation: fall linear forwards;
+    }
+    @keyframes fall{
+      to{ transform: translateY(110vh) rotate(720deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="confetti" id="confetti"></div>
+
+  <div class="app">
+    <!-- LEFT: GAME -->
+    <section class="card">
+      <header>
+        <div class="title">
+          <h1>IPOS Quiz Challenge</h1>
+          <div class="subtitle">
+            Test your knowledge of <b>Input, Processing, Output, and Storage</b>.
+            Choose the best answer before the timer ends!
+          </div>
+        </div>
+
+        <div class="pillRow">
+          <div class="pill">⏱️ Time: <b id="time">20</b>s</div>
+          <div class="pill">⭐ Score: <b id="score">0</b></div>
+          <div class="pill">🔥 Streak: <b id="streak">0</b></div>
+        </div>
+      </header>
+
+      <div class="main">
+        <div class="progressWrap">
+          <div class="bar"><div id="barFill"></div></div>
+          <div class="qCount" id="qCount">Q 1 / 10</div>
+        </div>
+
+        <div class="question" id="questionText">Loading…</div>
+
+        <div class="choices" id="choices"></div>
+
+        <div class="feedback" id="feedback"></div>
+
+        <div class="actions">
+          <button class="btnPrimary" id="nextBtn" disabled>Next Question ➜</button>
+          <button class="btnGhost" id="hintBtn">💡 Hint</button>
+          <button class="btnGhost" id="restartBtn">🔁 Restart</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: INFO -->
+    <aside class="card side">
+      <div class="miniCard">
+        <p class="miniTitle">How to win</p>
+        <p class="big">Get the highest score!</p>
+        <p class="small">
+          Correct answers give points. A streak gives bonus points.
+          Try not to run out of time.
+        </p>
+      </div>
+
+      <div class="miniCard">
+        <p class="miniTitle">IPOS Quick Guide</p>
+        <p class="small">
+          <b>Input</b> = Enter data (keyboard, mouse, scanner) <br/>
+          <b>Processing</b> = CPU works on data <br/>
+          <b>Output</b> = Results shown (monitor, printer, speakers) <br/>
+          <b>Storage</b> = Save data (RAM, SSD/HDD, flash drive)
+        </p>
+
+        <div class="topicChips">
+          <span class="chip">Input Devices</span>
+          <span class="chip">CPU</span>
+          <span class="chip">Output Devices</span>
+          <span class="chip">RAM vs SSD</span>
+        </div>
+      </div>
+
+      <div class="miniCard">
+        <p class="miniTitle">Teacher Tip</p>
+        <p class="small">
+          Want to add your own questions? Scroll to the bottom of the file and edit the <b>QUESTIONS</b> array.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+<script>
+  // ✅ Edit/add your own questions here:
+  const QUESTIONS = [
+    {
+      q: "Typing your name on a keyboard is an example of:",
+      choices: ["Processing", "Input", "Output", "Storage"],
+      answer: 1,
+      hint: "A keyboard sends data INTO the computer."
+    },
+    {
+      q: "Which part mainly performs calculations and makes decisions?",
+      choices: ["Monitor", "CPU", "Printer", "USB Drive"],
+      answer: 1,
+      hint: "It’s called the brain of the computer."
+    },
+    {
+      q: "Saving a file to a flash drive is:",
+      choices: ["Storage", "Output", "Processing", "Input"],
+      answer: 0,
+      hint: "It keeps data for later."
+    },
+    {
+      q: "Hearing music through speakers is an example of:",
+      choices: ["Input", "Processing", "Output", "Storage"],
+      answer: 2,
+      hint: "It is the result you can hear/see."
+    },
+    {
+      q: "RAM is best described as:",
+      choices: ["Permanent storage", "Temporary working memory", "An input device", "An output device"],
+      answer: 1,
+      hint: "It clears when power is off."
+    },
+    {
+      q: "Scanning a document into the computer is:",
+      choices: ["Input", "Storage", "Output", "Processing"],
+      answer: 0,
+      hint: "A scanner sends information into the computer."
+    },
+    {
+      q: "Printing a worksheet is an example of:",
+      choices: ["Processing", "Storage", "Input", "Output"],
+      answer: 3,
+      hint: "A printer shows results on paper."
+    },
+    {
+      q: "Which is an example of processing?",
+      choices: ["Clicking the mouse", "Saving to SSD", "CPU calculating a total", "Displaying on a monitor"],
+      answer: 2,
+      hint: "Think: the computer is working/solving."
+    },
+    {
+      q: "Which device is mainly used for OUTPUT?",
+      choices: ["Microphone", "Monitor", "Keyboard", "Scanner"],
+      answer: 1,
+      hint: "It shows what the computer is doing."
+    },
+    {
+      q: "A hard drive (HDD/SSD) is mainly used for:",
+      choices: ["Output", "Storage", "Input", "Processing"],
+      answer: 1,
+      hint: "It keeps your files long-term."
+    }
+  ];
+
+  // --- Game state ---
+  const TOTAL = QUESTIONS.length;
+  let order = [];
+  let idx = 0;
+  let score = 0;
+  let streak = 0;
+  let timeLeft = 20;
+  let timer = null;
+  let answered = false;
+
+  // --- Elements ---
+  const questionText = document.getElementById("questionText");
+  const choicesEl = document.getElementById("choices");
+  const feedbackEl = document.getElementById("feedback");
+  const nextBtn = document.getElementById("nextBtn");
+  const hintBtn = document.getElementById("hintBtn");
+  const restartBtn = document.getElementById("restartBtn");
+
+  const scoreEl = document.getElementById("score");
+  const streakEl = document.getElementById("streak");
+  const timeEl = document.getElementById("time");
+  const qCountEl = document.getElementById("qCount");
+  const barFill = document.getElementById("barFill");
+
+  const confetti = document.getElementById("confetti");
+
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function start(){
+    order = shuffle([...Array(TOTAL).keys()]);
+    idx = 0;
+    score = 0;
+    streak = 0;
+    setScore();
+    setStreak();
+    showQuestion();
+  }
+
+  function setScore(){ scoreEl.textContent = score; }
+  function setStreak(){ streakEl.textContent = streak; }
+
+  function setProgress(){
+    const qNum = idx + 1;
+    qCountEl.textContent = `Q ${qNum} / ${TOTAL}`;
+    barFill.style.width = `${(qNum - 1) / TOTAL * 100}%`;
+  }
+
+  function startTimer(){
+    stopTimer();
+    timeLeft = 20;
+    timeEl.textContent = timeLeft;
+    timer = setInterval(() => {
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+      if(timeLeft <= 0){
+        stopTimer();
+        lockChoices();
+        showFeedback(false, "Time’s up!", "No worries—hit Next and try again.");
+        nextBtn.disabled = false;
+        streak = 0;
+        setStreak();
+      }
+    }, 1000);
+  }
+
+  function stopTimer(){
+    if(timer) clearInterval(timer);
+    timer = null;
+  }
+
+  function showQuestion(){
+    answered = false;
+    nextBtn.disabled = true;
+    feedbackEl.style.display = "none";
+    feedbackEl.className = "feedback";
+
+    setProgress();
+    startTimer();
+
+    const qObj = QUESTIONS[order[idx]];
+    questionText.textContent = qObj.q;
+
+    choicesEl.innerHTML = "";
+    const labels = ["A", "B", "C", "D"];
+
+    qObj.choices.forEach((text, i) => {
+      const btn = document.createElement("div");
+      btn.className = "choice";
+      btn.setAttribute("role", "button");
+      btn.setAttribute("tabindex", "0");
+
+      btn.innerHTML = `
+        <div class="badge">${labels[i]}</div>
+        <div class="choiceText">${text}</div>
+      `;
+
+      btn.addEventListener("click", () => pick(i, btn));
+      btn.addEventListener("keydown", (e) => {
+        if(e.key === "Enter" || e.key === " ") pick(i, btn);
+      });
+
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  function lockChoices(){
+    [...choicesEl.children].forEach(el => el.classList.add("disabled"));
+  }
+
+  function markCorrectWrong(correctIndex, pickedIndex){
+    [...choicesEl.children].forEach((el, i) => {
+      if(i === correctIndex) el.classList.add("correct");
+      if(i === pickedIndex && pickedIndex !== correctIndex) el.classList.add("wrong");
+      el.classList.add("disabled");
+    });
+  }
+
+  function showFeedback(isGood, title, text){
+    feedbackEl.style.display = "block";
+    feedbackEl.classList.toggle("good", isGood);
+    feedbackEl.classList.toggle("bad", !isGood);
+    feedbackEl.innerHTML = `<strong>${title}</strong> ${text}`;
+  }
+
+  function pick(choiceIndex){
+    if(answered) return;
+    answered = true;
+    stopTimer();
+    lockChoices();
+
+    const qObj = QUESTIONS[order[idx]];
+    const correct = qObj.answer;
+
+    markCorrectWrong(correct, choiceIndex);
+
+    if(choiceIndex === correct){
+      streak++;
+      const base = 100;
+      const timeBonus = Math.max(0, timeLeft) * 2; // up to 40 bonus
+      const streakBonus = Math.min(60, streak * 10); // capped
+      const earned = base + timeBonus + streakBonus;
+      score += earned;
+      setScore();
+      setStreak();
+      showFeedback(true, "Correct ✅", `+${earned} points! (Time bonus + streak bonus)`);
+    } else {
+      streak = 0;
+      setStreak();
+      showFeedback(false, "Oops ❌", `Correct answer: <b>${qObj.choices[correct]}</b>`);
+    }
+
+    nextBtn.disabled = false;
+
+    // End game check
+    if(idx === TOTAL - 1){
+      nextBtn.textContent = "Finish ➜";
+    } else {
+      nextBtn.textContent = "Next Question ➜";
+    }
+  }
+
+  function next(){
+    if(idx < TOTAL - 1){
+      idx++;
+      showQuestion();
+      return;
+    }
+    // Finished
+    stopTimer();
+    barFill.style.width = "100%";
+    questionText.textContent = "🎉 Quiz Complete!";
+    choicesEl.innerHTML = `
+      <div class="miniCard" style="grid-column:1/-1;">
+        <p class="big" style="margin:0 0 8px;">Final Score: ${score}</p>
+        <p class="small" style="margin:0;">
+          Want students to replay? Click <b>Restart</b>.
+          Want your own questions? Edit the <b>QUESTIONS</b> array in the code.
+        </p>
+      </div>
+    `;
+    feedbackEl.style.display = "none";
+    nextBtn.disabled = true;
+    celebrate();
+  }
+
+  function celebrate(){
+    confetti.innerHTML = "";
+    confetti.style.display = "block";
+
+    const pieces = 120;
+    for(let i=0; i<pieces; i++){
+      const s = document.createElement("span");
+      const left = Math.random() * 100;
+      const size = 6 + Math.random() * 10;
+      const dur = 2.5 + Math.random() * 2.5;
+      const delay = Math.random() * 0.5;
+
+      s.style.left = left + "vw";
+      s.style.width = size + "px";
+      s.style.height = (size * 1.2) + "px";
+      s.style.animationDuration = dur + "s";
+      s.style.animationDelay = delay + "s";
+      // random bright color (no external libs)
+      s.style.background = `hsl(${Math.floor(Math.random()*360)}, 90%, 60%)`;
+
+      confetti.appendChild(s);
+    }
+    setTimeout(() => { confetti.style.display = "none"; }, 4200);
+  }
+
+  function showHint(){
+    const qObj = QUESTIONS[order[idx]];
+    showFeedback(true, "Hint 💡", qObj.hint);
+  }
+
+  // Buttons
+  nextBtn.addEventListener("click", next);
+  hintBtn.addEventListener("click", showHint);
+  restartBtn.addEventListener("click", () => {
+    // reset UI
+    confetti.style.display = "none";
+    nextBtn.textContent = "Next Question ➜";
+    start();
+  });
+
+  // Start game
+  start();
+</script>
+</body>
+</html>
+
